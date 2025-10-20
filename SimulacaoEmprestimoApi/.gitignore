@@ -1,0 +1,17 @@
+# Visual Studio
+.vs/
+*.user
+*.userosscache
+*.sln.docstates
+
+# Build results
+[Bb]in/
+[Oo]bj/
+
+# ASP.NET Core
+appsettings.Development.json
+
+# Outros
+*.db
+*.db-shm
+*.db-wal
