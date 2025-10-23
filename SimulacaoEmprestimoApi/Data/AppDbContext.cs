@@ -10,6 +10,7 @@ namespace SimulacaoEmprestimoApi.Data
         public DbSet<Produto> Produtos { get; set; }
         public DbSet<SimulacaoModel> Simulacoes { get; set; }
         public DbSet<ParcelaModel> Parcelas { get; set; }
+        public DbSet<UsuarioModel> Usuarios { get; set; }
 
         public AppDbContext(DbContextOptions<AppDbContext> options)
             : base(options)
@@ -48,6 +49,8 @@ namespace SimulacaoEmprestimoApi.Data
                 entity.Property(e => e.ValorJuros).HasColumnName("VALOR_JUROS");
                 entity.Property(e => e.ValorPrestacao).HasColumnName("VALOR_PRESTACAO");
             });
+
+            modelBuilder.Entity<UsuarioModel>().ToTable("USUARIOS"); // config opcional para garantir o mapeamento
         }
     }
 }

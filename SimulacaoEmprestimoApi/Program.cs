@@ -39,12 +39,14 @@ builder.Services.Configure<CacheSettings>( // Registrar as configurações de cach
     builder.Configuration.GetSection("CacheSettings"));
 
 builder.Services.AddScoped<ISimulacaoService, SimulacaoService>();
+builder.Services.AddScoped<IUsuarioService, UsuarioService>();
+builder.Services.AddScoped<ISenhaservice, SenhaService>();
 
 builder.Services.AddControllers();
 
 // -------------------- JWT BEARER -------------------
 var jwtSettings = builder.Configuration.GetSection("Jwt");
-var key = Encoding.ASCII.GetBytes(jwtSettings["Key"]);
+var key = Encoding.UTF8.GetBytes(jwtSettings["Key"]);
 
 builder.Services.AddAuthentication(options =>
 {
@@ -103,6 +105,16 @@ builder.Services.AddSwaggerGen(c =>
 // ####################################################################################
 
 var app = builder.Build();
+
+// Teste de conexão e mapeamento
+using (var scope = app.Services.CreateScope())
+{
+    var db = scope.ServiceProvider.GetRequiredService<AppDbContext>();
+
+    // Tenta acessar a tabela
+    var usuarios = db.Usuarios.ToList();
+    Console.WriteLine($"Tabela USUARIOS encontrada: {usuarios.Count} registros");
+}
 
 if (app.Environment.IsDevelopment()) // Configure the HTTP request pipeline.
 {

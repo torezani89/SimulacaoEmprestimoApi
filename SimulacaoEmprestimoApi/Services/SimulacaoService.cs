@@ -38,7 +38,7 @@ namespace SimulacaoEmprestimoApi.Services
             {
                 // consulta leve ao banco (sem forçar cache)
                 await _dbContext.Database.ExecuteSqlRawAsync("SELECT 1");
-                response.StatusBanco = "OK"; //Marca a API como "OK" se o serviço estiver ativo
+                response.StatusBanco = "OK";
             }
             catch (Exception ex)
             {
