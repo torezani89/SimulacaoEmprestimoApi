@@ -8,6 +8,9 @@
 Logs/
 *.log
 
+# Database queries (não versionar)
+queries_db/
+
 # Build results
 [Bb]in/
 [Oo]bj/

@@ -24,6 +24,9 @@ namespace SimulacaoEmprestimoApi.Services
             _logger = logger;
         }
 
+        // ===============================================
+        // 🔍 Health check
+        // ===============================================
         public async Task<HealthCheckResponse> VerificarSaudeAsync()
         {
             HealthCheckResponse? response = new HealthCheckResponse
@@ -51,6 +54,9 @@ namespace SimulacaoEmprestimoApi.Services
 
         }
 
+        // ===============================================
+        // 🧮 Simulação principal
+        // ===============================================
         public async Task<SimulacaoResponse> SimularAsync(SimulacaoRequest request)
         {
             _logger.LogInformation("Iniciando simulação: Valor={ValorDesejado}, Prazo={Prazo}", request.ValorDesejado, request.Prazo);
@@ -155,19 +161,22 @@ namespace SimulacaoEmprestimoApi.Services
             return response;
         }
 
+        // ===============================================
+        // 📋 Listagem
+        // ===============================================
         public async Task<List<SimulacaoModel>> ListarSimulacoesPersistidasAsync()
         {
-            try
-            {
-                List<SimulacaoModel> simulacoes = await _dbContext.Simulacoes.ToListAsync();
-                return simulacoes ?? new List<SimulacaoModel>();
-            }
-            catch (Exception ex)
-            {
-                throw new Exception($"Erro ao acessar simulações no banco: {ex.Message}", ex);
-            }
+            List<SimulacaoModel> simulacoes = await _dbContext.Simulacoes.ToListAsync();
+            return simulacoes ?? new List<SimulacaoModel>();
+            //catch (Exception ex) //centralizado em ErrorHandlingMiddleware
+            //{
+            //    throw new Exception($"Erro ao acessar simulações no banco: {ex.Message}", ex);
+            //}
         }
 
+        // ===============================================
+        // 🔎 Obter por ID
+        // ===============================================
         public async Task<SimulacaoResponse> ObterSimulacaoPorIdAsync(long idSimulacao)
         {
             //SimulacaoModel? simulacao = await _dbContext.Simulacoes.FindAsync((idSimulacao)); // FindAsync não aceita Include
@@ -175,7 +184,7 @@ namespace SimulacaoEmprestimoApi.Services
             .Include(s => s.Parcelas) // EF faz join com tabela Parcelas e preenche a prop de navegação 'Parcelas' de SimulacaoModel
             .FirstOrDefaultAsync(s => s.IdSimulacao == idSimulacao);
 
-            if (simulacao == null) return null;
+            if (simulacao == null) throw new KeyNotFoundException($"Simulação ID {idSimulacao} não encontrada.");
 
             var produto = await _dbContext.Produtos.FirstOrDefaultAsync(p => p.CO_PRODUTO == simulacao.CodigoProduto);
 
@@ -208,20 +217,23 @@ namespace SimulacaoEmprestimoApi.Services
             return response;
         }
 
+        // ===============================================
+        // 🔄 Atualização
+        // ===============================================
         public async Task<SimulacaoResponse?> AtualizarSimulacaoAsync(long idSimulacao, SimulacaoRequest request)
         {
             SimulacaoModel? simulacao = await _dbContext.Simulacoes
                 .Include(s => s.Parcelas)
                 .FirstOrDefaultAsync(s => s.IdSimulacao == idSimulacao);
 
-            if (simulacao == null) return null;
+            if (simulacao == null) throw new KeyNotFoundException($"Simulação ID {idSimulacao} não encontrada.");
 
             Produto? produto = await _dbContext.Produtos
                 .FirstOrDefaultAsync(p =>
                 request.Prazo >= p.NU_MINIMO_MESES && (p.NU_MAXIMO_MESES == null || request.Prazo <= p.NU_MAXIMO_MESES) &&
                 request.ValorDesejado >= p.VR_MINIMO && (p.VR_MAXIMO == null || request.ValorDesejado <= p.VR_MAXIMO));
 
-            if (produto == null) throw new Exception("Nenhum produto commpatível com os novos parâmetros");
+            if (produto == null) throw new ArgumentException("Nenhum produto commpatível com os novos parâmetros");
 
             // Atualiza dados principais da simulação
             simulacao.CodigoProduto = produto.CO_PRODUTO;
@@ -303,20 +315,22 @@ namespace SimulacaoEmprestimoApi.Services
 
         }
 
+        // ===============================================
+        // 🗑️ Exclusão
+        // ===============================================
         public async Task<bool> ExcluirSimulacaoAsync(long idSimulacao)
         {
             var simulacao = await _dbContext.Simulacoes
                 .Include(s => s.Parcelas)
                 .FirstOrDefaultAsync(s => s.IdSimulacao == idSimulacao);
 
-            if (simulacao == null) return false;
+            if (simulacao == null) throw new KeyNotFoundException($"Simulação ID {idSimulacao} não encontrada."); ;
 
             if (simulacao.Parcelas != null && simulacao.Parcelas.Any()) _dbContext.Parcelas.RemoveRange(simulacao.Parcelas);
             // simulacao.Parcelas = null
             // simulacao.Parcelas.Any() = Exception! → Por isso precisa da verificação != null
 
             _dbContext.Simulacoes.Remove(simulacao);
-
             await _dbContext.SaveChangesAsync();
 
             _cache.Remove(idSimulacao);
@@ -330,6 +344,9 @@ namespace SimulacaoEmprestimoApi.Services
             return simulacao;
         }
 
+        // ===============================================
+        // 📊 Estatísticas
+        // ===============================================
         public async Task<SimulacaoEstatisticasResponse> ObterEstatisticasAsync()
         {
             int totalSimulacoes = await _dbContext.Simulacoes.CountAsync();
