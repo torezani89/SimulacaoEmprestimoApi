@@ -1,6 +1,7 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SimulacaoEmprestimoApi.Data;
 using SimulacaoEmprestimoApi.Models;
+using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace SimulacaoEmprestimoApi.Services
 {
@@ -16,6 +17,28 @@ namespace SimulacaoEmprestimoApi.Services
             _dbContext = dbContext;
             _logger = logger;
             _senhaService = senhaService;
+        }
+
+        public async Task<ResponseModel<List<UsuarioModel>>> ListarUsuariosAsync()
+        {
+            ResponseModel<List<UsuarioModel>> response = new ResponseModel<List<UsuarioModel>>();
+
+            _logger.LogInformation("Tentativa de listas usuários iniciada");
+
+            try
+            {
+                List<UsuarioModel> usuarios = await _dbContext.Usuarios.ToListAsync();
+                response.Dados = usuarios;
+                response.Mensagem = "Usuários listados com sucesso";
+                response.Status = true;
+                _logger.LogInformation("Usuários listados com sucesso");
+            }
+            catch (Exception erro) {
+                _logger.LogError(erro, "Erro ao listar usuários: {erro}", erro.Message);
+                response.Mensagem = erro.Message;
+                response.Status = false;
+            }
+            return response;
         }
 
         public async Task<ResponseModel<UsuarioModel>> LoginAsync(UsuarioLoginDto usuarioLoginDto)
@@ -105,6 +128,39 @@ namespace SimulacaoEmprestimoApi.Services
                 response.Status = false;
                 return await Task.FromResult(response); // Corrigido para retornar uma Task
             }
+        }
+
+        public async Task<ResponseModel<UsuarioModel>> RemoverUsuarioAsync(int id)
+        {
+            _logger.LogInformation("Tentativa de remover usuário Id: {id}", id);
+            ResponseModel<UsuarioModel> response = new ResponseModel<UsuarioModel>();
+
+            try
+            {
+                UsuarioModel? usuario = await _dbContext.Usuarios.FindAsync(id);
+                if (usuario == null)
+                {
+                    _logger.LogWarning("Usuário Id {id} não localizado no banco", id);
+                    response.Mensagem = $"Usuário Id {id} não localizado";
+                    response.Status = false;
+                    return response;
+                }
+
+                _dbContext.Usuarios.Remove(usuario);
+                await _dbContext.SaveChangesAsync();
+                _logger.LogInformation("Usuário Id {id} removido com sucesso!", id);
+                
+                response.Dados = usuario;
+                response.Mensagem = $"Usuário Id {id} removido com sucesso!";
+                response.Status = true;
+            }
+            catch (Exception erro)
+            {
+                _logger.LogError(erro, "Erro ao remover usuário Id: {id}. Detalhes: {ErroDetalhes}", id, erro.Message);
+                response.Mensagem = erro.Message;
+                response.Status = false;
+            }
+            return response;
         }
     }
 }

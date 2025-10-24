@@ -6,5 +6,7 @@ namespace SimulacaoEmprestimoApi.Services
     {
         Task<ResponseModel<UsuarioModel>> RegistrarUsuarioAsync(UsuarioCriacaoDto usuarioCriacao);
         Task<ResponseModel<UsuarioModel>> LoginAsync(UsuarioLoginDto loginRequest);
+        Task<ResponseModel<List<UsuarioModel>>> ListarUsuariosAsync();
+        Task<ResponseModel<UsuarioModel>> RemoverUsuarioAsync(int id);
     }
 }

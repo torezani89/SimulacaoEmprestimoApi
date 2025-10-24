@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Configuration;
+﻿using Microsoft.EntityFrameworkCore.Metadata.Internal;
+using Microsoft.Extensions.Configuration;
 using Microsoft.IdentityModel.Tokens;
 using SimulacaoEmprestimoApi.Models;
 using System.IdentityModel.Tokens.Jwt;
@@ -40,14 +41,14 @@ namespace SimulacaoEmprestimoApi.Services
             };
 
             var jwtSettings = _config.GetSection("Jwt");
-            var jwtSettingsKey = jwtSettings["Key"];
+            var Key = jwtSettings["Key"];
 
-            if (string.IsNullOrEmpty(jwtSettingsKey))
+            if (string.IsNullOrEmpty(Key))
             {
                 throw new InvalidOperationException("A chave JWT não foi configurada em appsettings.json");
             }
 
-            var key = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(jwtSettingsKey));
+            var key = new SymmetricSecurityKey(System.Text.Encoding.UTF8.GetBytes(Key));
 
             var credentials = new SigningCredentials(key, SecurityAlgorithms.HmacSha512Signature);
 

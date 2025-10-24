@@ -125,6 +125,7 @@ if (app.Environment.IsDevelopment()) // Configure the HTTP request pipeline.
 app.UseHttpsRedirection();
 
 app.UseMiddleware<RequestResponseLoggingMiddleware>(); // Usa o middleware de logs de requisição/resposta
+app.UseMiddleware<ErrorHandlingMiddleware>(); // middleware de tratamento de erros
 
 app.UseAuthentication(); // adicionar para usar Autenticacao JWT
 

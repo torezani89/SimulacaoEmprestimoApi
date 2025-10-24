@@ -35,6 +35,14 @@ namespace SimulacaoEmprestimoApi.Controllers
         {
             if (request.ValorDesejado <= 0 || request.Prazo <= 0)
                 return BadRequest("Valor e prazo devem ser maiores que zero.");
+            bool forcarErro = false;
+            if (forcarErro)
+            {
+                //throw new Exception("Erro simulado para testes");
+                //throw new ArgumentException();
+                throw new UnauthorizedAccessException();
+                //throw new KeyNotFoundException();
+            }
 
             try
             {
@@ -47,10 +55,18 @@ namespace SimulacaoEmprestimoApi.Controllers
             }
         }
 
-        [Authorize]
+        //[Authorize]
         [HttpGet("listar")]
         public async Task<IActionResult> ListarSimulacoesPersistidas()
         {
+            bool forcarErro = true;
+            if (forcarErro)
+            {
+                throw new Exception("Erro simulado para testes");
+                //throw new ArgumentException();
+                //throw new UnauthorizedAccessException();
+                //throw new KeyNotFoundException();
+            }
             List<SimulacaoModel> simulacoes = await _simulacaoService.ListarSimulacoesPersistidasAsync();
             return Ok(simulacoes);
         }
