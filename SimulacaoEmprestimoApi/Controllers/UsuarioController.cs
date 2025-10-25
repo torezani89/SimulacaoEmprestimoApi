@@ -18,7 +18,7 @@ namespace SimulacaoEmprestimoApi.Controllers
         }
 
         [HttpPost("registrar")]
-        public async Task<ActionResult<ResponseModel<UsuarioModel>>> RegistrarUsuario(UsuarioCriacaoDto usuarioCriacao)
+        public async Task<ActionResult<ResponseModel<UsuarioResponseDto>>> RegistrarUsuario(UsuarioCriacaoDto usuarioCriacao)
         {
              var response = await _usuarioService.RegistrarUsuarioAsync(usuarioCriacao);
              return Ok(response);
@@ -32,24 +32,24 @@ namespace SimulacaoEmprestimoApi.Controllers
         }
 
         [HttpGet("listar")]
-        public async Task<ActionResult<ResponseModel<List<UsuarioModel>>>> ListarUsuarios()
+        public async Task<ActionResult<ResponseModel<IEnumerable<UsuarioModel>>>> ListarUsuarios()
         {
-            ResponseModel < List < UsuarioModel >> response = await _usuarioService.ListarUsuariosAsync();
+            ResponseModel < IEnumerable <UsuarioModel>> response = await _usuarioService.ListarUsuariosAsync();
+            return Ok(response);
+        }
+
+        [HttpGet("buscar/{id:int}")]
+        public async Task<ActionResult<UsuarioModel>>? ObterUsuario(int id)
+        {
+            UsuarioModel? response = await _usuarioService.ObterUsuarioPorIdAsync(id);
             return Ok(response);
         }
 
         [HttpDelete("remover/{id}")]
         public async Task<IActionResult> RemoverUsuario(int id)
         {
+            //throw new ArgumentNullException("Controller: Erro simulado para testes"); // ### forçar erro para testes ###
             var response = await _usuarioService.RemoverUsuarioAsync(id);
-
-            if (!response.Status) // "se response.Status == false" (operação falhou)
-            {
-                // Retorna 404 se usuário não foi encontrado
-                if (response.Mensagem.Contains("não localizado")) return NotFound(response);
-
-                return BadRequest(response); // Retorna 400 para outros erros do cliente
-            }
 
             return Ok(response);
         }

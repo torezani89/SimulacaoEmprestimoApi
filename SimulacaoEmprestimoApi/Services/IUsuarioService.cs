@@ -4,9 +4,10 @@ namespace SimulacaoEmprestimoApi.Services
 {
     public interface IUsuarioService
     {
-        Task<ResponseModel<UsuarioModel>> RegistrarUsuarioAsync(UsuarioCriacaoDto usuarioCriacao);
-        Task<ResponseModel<UsuarioModel>> LoginAsync(UsuarioLoginDto loginRequest);
-        Task<ResponseModel<List<UsuarioModel>>> ListarUsuariosAsync();
-        Task<ResponseModel<UsuarioModel>> RemoverUsuarioAsync(int id);
+        Task<ResponseModel<UsuarioResponseDto>> RegistrarUsuarioAsync(UsuarioCriacaoDto usuarioCriacao);
+        Task<ResponseModel<UsuarioResponseDto>> LoginAsync(UsuarioLoginDto loginRequest);
+        Task<ResponseModel<IEnumerable<UsuarioModel>>> ListarUsuariosAsync();
+        Task<ResponseModel<UsuarioResponseDto>> RemoverUsuarioAsync(int id);
+        Task<UsuarioModel> ObterUsuarioPorIdAsync(int id);
     }
 }

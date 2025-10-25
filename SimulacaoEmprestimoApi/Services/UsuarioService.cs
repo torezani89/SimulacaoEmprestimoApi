@@ -1,6 +1,9 @@
 ﻿using Microsoft.EntityFrameworkCore;
 using SimulacaoEmprestimoApi.Data;
 using SimulacaoEmprestimoApi.Models;
+using System.Collections;
+using System.Collections.Generic;
+using static System.Net.Mime.MediaTypeNames;
 using static System.Runtime.InteropServices.JavaScript.JSType;
 
 namespace SimulacaoEmprestimoApi.Services
@@ -22,7 +25,7 @@ namespace SimulacaoEmprestimoApi.Services
         // ======================================================
         // 📋 Listar Usuários
         // ======================================================
-        public async Task<ResponseModel<List<UsuarioModel>>> ListarUsuariosAsync()
+        public async Task<ResponseModel<IEnumerable<UsuarioModel>>> ListarUsuariosAsync()
         {
             _logger.LogInformation("Tentativa de listas usuários iniciada");
 
@@ -34,9 +37,15 @@ namespace SimulacaoEmprestimoApi.Services
                 throw new KeyNotFoundException("Nenhum usuário encontrado.");
             }
 
-            _logger.LogInformation("{Quantidade} usuários listados com sucesso", usuarios.Count());
+            _logger.LogInformation("{Quantidade} usuários listados com sucesso", usuarios.Count);
+            // IEnumerable.Count() → Método que pode executar a query SELECT COUNT(*)
+            // List.Count → Propriedade que conta em memória (melhor)
 
-            return new ResponseModel<List<UsuarioModel>>
+            // usar no ambiente de produção para esconder dados sensíveis
+            //IEnumerable<UsuarioResponseDto> usuariosResponseDtoList = usuarios.Select(usuario => usuario.ToUsuarioResponseDto()).ToList();
+            // alterar tipo do returno do método no service/interface/controller para IEnumerable<UsuarioResponseDto>>
+
+            return new ResponseModel<IEnumerable<UsuarioModel>> // provisório: permite visualizar Id/Token
             {
                 Dados = usuarios,
                 Mensagem = "Usuários listados com sucesso",
@@ -47,7 +56,7 @@ namespace SimulacaoEmprestimoApi.Services
         // ======================================================
         // 🔐 Login
         // ======================================================
-        public async Task<ResponseModel<UsuarioModel>> LoginAsync(UsuarioLoginDto usuarioLoginDto)
+        public async Task<ResponseModel<UsuarioResponseDto>> LoginAsync(UsuarioLoginDto usuarioLoginDto)
         {
             _logger.LogInformation("Tentativa de login para o email: {Email}", usuarioLoginDto.Email);
 
@@ -74,18 +83,33 @@ namespace SimulacaoEmprestimoApi.Services
 
             _logger.LogInformation("Login realizado com sucesso para o usuário: {UsuarioId}", usuario.Id);
 
-            return new ResponseModel<UsuarioModel>
+            UsuarioResponseDto? usuarioResponse = usuario.ToUsuarioResponseDto(); // conversão com método de extensão
+
+            return new ResponseModel<UsuarioResponseDto>
             {
-                Dados = usuario,
+                Dados = usuarioResponse,
                 Mensagem = "Usuário logado com sucesso",
                 Status = true
             };
         }
 
         // ======================================================
+        //  Obter Usuário por Id
+        // ======================================================
+        public async Task<UsuarioModel> ObterUsuarioPorIdAsync(int id)
+        {
+            UsuarioModel? usuario = await _dbContext.Usuarios.FindAsync(id);
+
+            if (usuario == null) throw new KeyNotFoundException($"Usuário ID {id} não encontrado.");
+
+            //UsuarioResponseDto? usuarioResponse = usuario.ToUsuarioResponseDto(); // correto
+            return usuario; // provisório: retorna usuario para usar o token (testes)
+        }
+
+        // ======================================================
         // 🧾 Registrar Usuário
         // ======================================================
-        public async Task<ResponseModel<UsuarioModel>> RegistrarUsuarioAsync(UsuarioCriacaoDto usuarioCriacaoDto)
+        public async Task<ResponseModel<UsuarioResponseDto>> RegistrarUsuarioAsync(UsuarioCriacaoDto usuarioCriacaoDto)
         {
             _logger.LogInformation("Iniciando registro de novo usuário: {Email}", usuarioCriacaoDto.Email);
 
@@ -105,24 +129,27 @@ namespace SimulacaoEmprestimoApi.Services
             }
             _senhaService.CriarSenhaHash(usuarioCriacaoDto.Senha, out byte[] senhaHash, out byte[] senhaSalt);
 
-            UsuarioModel usuario = new UsuarioModel()
-            {
-                Usuario = usuarioCriacaoDto.Usuario,
-                Nome = usuarioCriacaoDto.Nome,
-                Sobrenome = usuarioCriacaoDto.Sobrenome,
-                Email = usuarioCriacaoDto.Email,
-                SenhaHash = senhaHash,
-                SenhaSalt = senhaSalt
-            };
+            //UsuarioModel usuario = new UsuarioModel() // ### conversão manual ###
+            //{
+            //    Usuario = usuarioCriacaoDto.Usuario,
+            //    Nome = usuarioCriacaoDto.Nome,
+            //    Sobrenome = usuarioCriacaoDto.Sobrenome,
+            //    Email = usuarioCriacaoDto.Email,
+            //    SenhaHash = senhaHash,
+            //    SenhaSalt = senhaSalt
+            //};
+            UsuarioModel usuario = usuarioCriacaoDto.ToUsuarioModel(senhaHash, senhaSalt); // conversão com método de extensão
 
             _dbContext.Add(usuario);
             await _dbContext.SaveChangesAsync();
 
             _logger.LogInformation("Usuário registrado com sucesso. ID: {UsuarioId}, Email: {Email}", usuario.Id, usuario.Email);
 
-            return new ResponseModel<UsuarioModel>
+            UsuarioResponseDto? usuarioResponse = usuario.ToUsuarioResponseDto();
+
+            return new ResponseModel<UsuarioResponseDto>
             {
-                Dados = usuario,
+                Dados = usuarioResponse,
                 Mensagem = "Usuário cadastrado com sucesso",
                 Status = true
             };
@@ -131,7 +158,7 @@ namespace SimulacaoEmprestimoApi.Services
         // ======================================================
         // 🗑️ Remover Usuário
         // ======================================================
-        public async Task<ResponseModel<UsuarioModel>> RemoverUsuarioAsync(int id)
+        public async Task<ResponseModel<UsuarioResponseDto>> RemoverUsuarioAsync(int id)
         {
             _logger.LogInformation("Tentativa de remover usuário Id: {id}", id);
 
@@ -140,17 +167,20 @@ namespace SimulacaoEmprestimoApi.Services
             if (usuario == null)
             {
                 _logger.LogWarning("Usuário Id {id} não localizado no banco", id);
-                throw new KeyNotFoundException($"Usuário Id {id} não localizado no banco");
+                throw new KeyNotFoundException($"UsuarioService.RemoverUsuarioAsync() : Usuário Id {id} não localizado no banco");
             }
+            //throw new Exception("UsuarioService.RemoverUsuarioAsync(): Erro simulado para testes"); // ### forçar erro para testes ###
 
             _dbContext.Usuarios.Remove(usuario);
             await _dbContext.SaveChangesAsync();
 
             _logger.LogInformation("Usuário Id {id} removido com sucesso!", id);
 
-            return new ResponseModel<UsuarioModel>
+            UsuarioResponseDto? usuarioResponse = usuario.ToUsuarioResponseDto();
+
+            return new ResponseModel<UsuarioResponseDto>
             {
-                Dados = usuario,
+                Dados = usuarioResponse,
                 Mensagem = $"Usuário {id} removido com sucesso",
                 Status = true,
             };

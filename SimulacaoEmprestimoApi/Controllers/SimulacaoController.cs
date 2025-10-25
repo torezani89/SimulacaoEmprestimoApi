@@ -49,11 +49,7 @@ namespace SimulacaoEmprestimoApi.Controllers
         [HttpGet("listar")] // GET para /api/Simulacao/listar
         public async Task<IActionResult> ListarSimulacoesPersistidas()
         {
-            bool forcarErro = false;
-            if (forcarErro)
-            {
-                throw new Exception("Erro simulado para testes");
-            }
+            //throw new Exception("Erro simulado para testes"); // ### forçar erro para testes ###
             List<SimulacaoModel> simulacoes = await _simulacaoService.ListarSimulacoesPersistidasAsync();
             return Ok(simulacoes);
         }
