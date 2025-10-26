@@ -1,7 +1,8 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using Microsoft.AspNetCore.Authorization;
+using Microsoft.AspNetCore.Mvc;
 using SimulacaoEmprestimoApi.Models;
+using SimulacaoEmprestimoApi.Pagination;
 using SimulacaoEmprestimoApi.Services;
-using Microsoft.AspNetCore.Authorization;
 
 namespace SimulacaoEmprestimoApi.Controllers
 {
@@ -46,11 +47,20 @@ namespace SimulacaoEmprestimoApi.Controllers
         }
 
         //[Authorize]
-        [HttpGet("listar")] // GET para /api/Simulacao/listar
+        [HttpGet("listar")] // GET para /api/Simulacao/listar (busca tudo de uma vez no banco -> sem paginação)
         public async Task<IActionResult> ListarSimulacoesPersistidas()
         {
             //throw new Exception("Erro simulado para testes"); // ### forçar erro para testes ###
             List<SimulacaoModel> simulacoes = await _simulacaoService.ListarSimulacoesPersistidasAsync();
+            return Ok(simulacoes);
+        }
+
+        //[Authorize]
+        [HttpGet("paginacao")] //GET /api/simulacao/paginacao?pageNumber=1&pageSize=10
+
+        public async Task<IActionResult> ListarSimulacoesPersistidasComPaginacao([FromQuery] SimulacaoParameters simulacaoParams)
+        {
+            var simulacoes = await _simulacaoService.ListarSimulacoesPersistidasAsyncComPaginacao(simulacaoParams);
             return Ok(simulacoes);
         }
 
