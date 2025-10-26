@@ -5,6 +5,7 @@ using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using SimulacaoEmprestimoApi.Data;
 using SimulacaoEmprestimoApi.Models;
+using SimulacaoEmprestimoApi.Pagination;
 
 namespace SimulacaoEmprestimoApi.Services
 {
@@ -175,7 +176,37 @@ namespace SimulacaoEmprestimoApi.Services
         }
 
         // ===============================================
-        // 🔎 Obter por ID
+        // 📋 Listagem com Paginacao
+        // ===============================================
+        public async Task<List<SimulacaoModel>> ListarSimulacoesPersistidasAsyncComPaginacao(SimulacaoParameters simulacaoParams)
+        {
+            _logger.LogInformation("Listando simulações com paginação: Página {PageNumber}, Tamanho {PageSize}",
+                simulacaoParams.PageNumber, simulacaoParams.PageSize);
+
+            // Define valores padrão se não informados
+            int pageNumber = simulacaoParams.PageNumber <= 0 ? 1 : simulacaoParams.PageNumber;
+            int pageSize = simulacaoParams.PageSize <= 0 ? 10 : simulacaoParams.PageSize;
+
+            // Aplica paginação diretamente no banco
+            var simulacoes = await _dbContext.Simulacoes
+                .OrderByDescending(s => s.DataSimulacao) // mais recentes primeiro
+                .Skip((pageNumber - 1) * pageSize) // pular registros das páginas anteriores à página selecionada
+                .Take(pageSize) // pega a quantidade de páginas passadas em pageSize
+                .ToListAsync();
+
+            if (simulacoes == null || simulacoes.Count == 0)
+            {
+                _logger.LogWarning("Nenhuma simulação encontrada na página {PageNumber}.", pageNumber);
+                // exception capturada e formatada pelo ErrorHandlingMiddleware.
+                throw new KeyNotFoundException("Nenhuma simulação encontrada para os parâmetros informados.");
+            }
+
+            _logger.LogInformation("{Quantidade} simulações retornadas na página {PageNumber}.", simulacoes.Count, pageNumber);
+            return simulacoes;
+        }
+
+        // ===============================================
+        // 🔎 Obter Simulação por ID
         // ===============================================
         public async Task<SimulacaoResponse> ObterSimulacaoPorIdAsync(long idSimulacao)
         {
@@ -338,6 +369,9 @@ namespace SimulacaoEmprestimoApi.Services
             return true;
         }
 
+        // ===============================================
+        // 🔎 Obter Simulação do Cache
+        // ===============================================
         public SimulacaoResponse? ObterSimulacaoCachePorId(long idSimulacao)
         {
             _cache.TryGetValue(idSimulacao, out SimulacaoResponse? simulacao);
