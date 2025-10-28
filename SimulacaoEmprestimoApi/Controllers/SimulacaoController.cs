@@ -3,6 +3,7 @@ using Microsoft.AspNetCore.Mvc;
 using SimulacaoEmprestimoApi.Models;
 using SimulacaoEmprestimoApi.Pagination;
 using SimulacaoEmprestimoApi.Services;
+using System.Text.Json;
 
 namespace SimulacaoEmprestimoApi.Controllers
 {
@@ -57,12 +58,58 @@ namespace SimulacaoEmprestimoApi.Controllers
 
         //[Authorize]
         [HttpGet("paginacao")] //GET /api/simulacao/paginacao?pageNumber=1&pageSize=10
-
-        public async Task<IActionResult> ListarSimulacoesPersistidasComPaginacao([FromQuery] SimulacaoParameters simulacaoParams)
+        public ActionResult<IEnumerable<SimulacaoModel>> ListarSimulacoesPersistidasComPaginacao([FromQuery] SimulacaoParameters simulacaoParams)
         {
-            var simulacoes = await _simulacaoService.ListarSimulacoesPersistidasAsyncComPaginacao(simulacaoParams);
-            return Ok(simulacoes);
+            var simulacoesPaginadas = _simulacaoService.ListarSimulacoesPersistidasAsyncComPaginacao(simulacaoParams);
+
+            var metadata = new
+            {
+                simulacoesPaginadas.TotalCount,
+                simulacoesPaginadas.TotalPages,
+                simulacoesPaginadas.PageSize,
+                simulacoesPaginadas.CurrentPage,
+                simulacoesPaginadas.HasNext,
+                simulacoesPaginadas.HasPrevious
+            };
+
+            //Response.Headers.Append("X-Pagination", JsonConvert.SerializeObject(metadata)); // usando package Newtonsoft.Json
+
+            var options = new JsonSerializerOptions // definir options se usar System.Text.Json.JsonSerializer
+            {
+                PropertyNamingPolicy = JsonNamingPolicy.CamelCase, // Com opções para camelCase (igual Newtonsoft)
+                WriteIndented = false // false para headers (otimizado)
+            };
+            Response.Headers.Append("X-Pagination", System.Text.Json.JsonSerializer.Serialize(metadata, options));
+
+            return Ok(simulacoesPaginadas);
         }
+
+        [Authorize]
+        [HttpGet("filtro-paginado")] //GET /api/simulacao/filtro-paginado?valorMin=2000&valorMax=10000&prazoMin=12&prazoMax=24&pageNumber=1&pageSize=10
+
+        public ActionResult<IEnumerable<SimulacaoModel>> ListarSimulacoesFiltradasComPaginacao([FromQuery] SimulacaoParameters simulacaoParams,
+                                                            [FromQuery] decimal? valorMin = null, [FromQuery] decimal? valorMax = null,
+                                                            [FromQuery] int? prazoMin = null, [FromQuery] int? prazoMax = null)
+        {
+            var simulacoesPaginadas = _simulacaoService.ListarSimulacoesFiltradasComPaginacao(simulacaoParams, valorMin, valorMax, prazoMin, prazoMax);
+
+            var metadata = new
+            {
+                simulacoesPaginadas.TotalCount,
+                simulacoesPaginadas.TotalPages,
+                simulacoesPaginadas.PageSize,
+                simulacoesPaginadas.CurrentPage,
+                simulacoesPaginadas.HasNext,
+                simulacoesPaginadas.HasPrevious
+            };
+
+            // Adiciona metadados no header
+            var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase, WriteIndented = false };
+            Response.Headers.Append("X-Pagination", System.Text.Json.JsonSerializer.Serialize(metadata, options));
+
+            return Ok(simulacoesPaginadas);
+        }
+
 
         [Authorize]
         [HttpGet("buscar/{idSimulacao:long}")]

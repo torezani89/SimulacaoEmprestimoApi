@@ -178,7 +178,7 @@ namespace SimulacaoEmprestimoApi.Services
         // ===============================================
         // 📋 Listagem com Paginacao
         // ===============================================
-        public async Task<List<SimulacaoModel>> ListarSimulacoesPersistidasAsyncComPaginacao(SimulacaoParameters simulacaoParams)
+        public PagedList<SimulacaoModel> ListarSimulacoesPersistidasAsyncComPaginacao(SimulacaoParameters simulacaoParams)
         {
             _logger.LogInformation("Listando simulações com paginação: Página {PageNumber}, Tamanho {PageSize}",
                 simulacaoParams.PageNumber, simulacaoParams.PageSize);
@@ -188,21 +188,70 @@ namespace SimulacaoEmprestimoApi.Services
             int pageSize = simulacaoParams.PageSize <= 0 ? 10 : simulacaoParams.PageSize;
 
             // Aplica paginação diretamente no banco
-            var simulacoes = await _dbContext.Simulacoes
-                .OrderByDescending(s => s.DataSimulacao) // mais recentes primeiro
-                .Skip((pageNumber - 1) * pageSize) // pular registros das páginas anteriores à página selecionada
-                .Take(pageSize) // pega a quantidade de páginas passadas em pageSize
-                .ToListAsync();
+            var simulacoes = _dbContext.Simulacoes
+                .OrderByDescending(s => s.DataSimulacao).AsQueryable(); // mais recentes primeiro
+                //.Skip((pageNumber - 1) * pageSize) // pular registros das páginas anteriores à página selecionada
+                //.Take(pageSize) // pega a quantidade de páginas passadas em pageSize
+                //.ToListAsync();
+            var simulacoesOrdenadas = PagedList<SimulacaoModel>.ToPagedList(simulacoes, simulacaoParams.PageNumber, simulacaoParams.PageSize);
 
-            if (simulacoes == null || simulacoes.Count == 0)
+            int qtddSimulacoes = simulacoesOrdenadas.Count();
+
+            if (simulacoesOrdenadas == null || qtddSimulacoes == 0)
             {
                 _logger.LogWarning("Nenhuma simulação encontrada na página {PageNumber}.", pageNumber);
                 // exception capturada e formatada pelo ErrorHandlingMiddleware.
                 throw new KeyNotFoundException("Nenhuma simulação encontrada para os parâmetros informados.");
             }
 
-            _logger.LogInformation("{Quantidade} simulações retornadas na página {PageNumber}.", simulacoes.Count, pageNumber);
-            return simulacoes;
+            _logger.LogInformation("{Quantidade} simulações retornadas na página {PageNumber}.", qtddSimulacoes, pageNumber);
+
+            return simulacoesOrdenadas;
+        }
+
+        // ===============================================
+        // 📋 Listagem com Paginacao + Filtros
+        // ===============================================
+        public PagedList<SimulacaoModel> ListarSimulacoesFiltradasComPaginacao(
+    SimulacaoParameters simulacaoParams, decimal? valorMin = null, decimal? valorMax = null, int? prazoMin = null, int? prazoMax = null)
+        {
+            _logger.LogInformation("Listando simulações filtradas e paginadas. Página {Page}, Tamanho {Size}, Filtros: ValorMin={ValorMin}, ValorMax={ValorMax}, PrazoMin={PrazoMin}, PrazoMax={PrazoMax}",
+                simulacaoParams.PageNumber, simulacaoParams.PageSize, valorMin, valorMax, prazoMin, prazoMax);
+
+            int pageNumber = simulacaoParams.PageNumber <= 0 ? 1 : simulacaoParams.PageNumber;
+            int pageSize = simulacaoParams.PageSize <= 0 ? 10 : simulacaoParams.PageSize;
+
+            // 🔹 Cria uma query base sobre Simulacoes => permite aplicar filtros e pagination no banco, sem carregar tudo antes em memória (IEnumerable)
+            IQueryable<SimulacaoModel> query = _dbContext.Simulacoes.AsQueryable();
+
+            // 🔹 Aplica filtros dinâmicos
+            if (valorMin.HasValue)
+                query = query.Where(s => s.ValorDesejado >= valorMin.Value);
+
+            if (valorMax.HasValue)
+                query = query.Where(s => s.ValorDesejado <= valorMax.Value);
+
+            if (prazoMin.HasValue)
+                query = query.Where(s => s.Prazo >= prazoMin.Value);
+
+            if (prazoMax.HasValue)
+                query = query.Where(s => s.Prazo <= prazoMax.Value);
+
+            // 🔹 Ordena por data (mais recentes primeiro)
+            query = query.OrderByDescending(s => s.DataSimulacao);
+
+            // 🔹 Cria lista paginada
+            var pagedResult = PagedList<SimulacaoModel>.ToPagedList(query, pageNumber, pageSize);
+
+            if (pagedResult == null || pagedResult.Count == 0)
+            {
+                _logger.LogWarning("Nenhuma simulação encontrada para os filtros informados.");
+                throw new KeyNotFoundException("Nenhuma simulação encontrada para os filtros informados.");
+            }
+
+            _logger.LogInformation("{Count} simulações encontradas (página {Page}).", pagedResult.Count, pageNumber);
+
+            return pagedResult;
         }
 
         // ===============================================

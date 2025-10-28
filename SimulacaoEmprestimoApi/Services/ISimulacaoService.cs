@@ -9,7 +9,9 @@ namespace SimulacaoEmprestimoApi.Services
         Task<SimulacaoResponse> SimularAsync(SimulacaoRequest request);
         SimulacaoResponse? ObterSimulacaoCachePorId(long idSimulacao);
         Task<List<SimulacaoModel>> ListarSimulacoesPersistidasAsync();
-        Task<List<SimulacaoModel>> ListarSimulacoesPersistidasAsyncComPaginacao(SimulacaoParameters simulacaoParams);
+        PagedList<SimulacaoModel> ListarSimulacoesPersistidasAsyncComPaginacao(SimulacaoParameters simulacaoParams);
+        public PagedList<SimulacaoModel> ListarSimulacoesFiltradasComPaginacao(SimulacaoParameters simulacaoParams, decimal? valorMin = null,
+                                            decimal? valorMax = null, int? prazoMin = null, int? prazoMax = null);
         Task<SimulacaoResponse> ObterSimulacaoPorIdAsync(long idSimulacao);
         Task<SimulacaoResponse?> AtualizarSimulacaoAsync(long idSimulacao, SimulacaoRequest request);
         Task<bool> ExcluirSimulacaoAsync(long idSimulacao);
