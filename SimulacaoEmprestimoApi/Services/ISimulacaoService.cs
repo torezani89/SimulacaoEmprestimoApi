@@ -1,4 +1,5 @@
 ﻿using Microsoft.AspNetCore.Mvc;
+using SimulacaoEmprestimoApi.Extensions;
 using SimulacaoEmprestimoApi.Models;
 using SimulacaoEmprestimoApi.Pagination;
 

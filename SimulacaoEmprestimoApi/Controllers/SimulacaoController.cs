@@ -1,5 +1,6 @@
 ﻿using Microsoft.AspNetCore.Authorization;
 using Microsoft.AspNetCore.Mvc;
+using SimulacaoEmprestimoApi.Extensions;
 using SimulacaoEmprestimoApi.Models;
 using SimulacaoEmprestimoApi.Pagination;
 using SimulacaoEmprestimoApi.Services;
@@ -62,24 +63,7 @@ namespace SimulacaoEmprestimoApi.Controllers
         {
             var simulacoesPaginadas = _simulacaoService.ListarSimulacoesPersistidasAsyncComPaginacao(simulacaoParams);
 
-            var metadata = new
-            {
-                simulacoesPaginadas.TotalCount,
-                simulacoesPaginadas.TotalPages,
-                simulacoesPaginadas.PageSize,
-                simulacoesPaginadas.CurrentPage,
-                simulacoesPaginadas.HasNext,
-                simulacoesPaginadas.HasPrevious
-            };
-
-            //Response.Headers.Append("X-Pagination", JsonConvert.SerializeObject(metadata)); // usando package Newtonsoft.Json
-
-            var options = new JsonSerializerOptions // definir options se usar System.Text.Json.JsonSerializer
-            {
-                PropertyNamingPolicy = JsonNamingPolicy.CamelCase, // Com opções para camelCase (igual Newtonsoft)
-                WriteIndented = false // false para headers (otimizado)
-            };
-            Response.Headers.Append("X-Pagination", System.Text.Json.JsonSerializer.Serialize(metadata, options));
+            Response.AddPaginationHeader(simulacoesPaginadas);
 
             return Ok(simulacoesPaginadas);
         }
@@ -93,19 +77,7 @@ namespace SimulacaoEmprestimoApi.Controllers
         {
             var simulacoesPaginadas = _simulacaoService.ListarSimulacoesFiltradasComPaginacao(simulacaoParams, valorMin, valorMax, prazoMin, prazoMax);
 
-            var metadata = new
-            {
-                simulacoesPaginadas.TotalCount,
-                simulacoesPaginadas.TotalPages,
-                simulacoesPaginadas.PageSize,
-                simulacoesPaginadas.CurrentPage,
-                simulacoesPaginadas.HasNext,
-                simulacoesPaginadas.HasPrevious
-            };
-
-            // Adiciona metadados no header
-            var options = new JsonSerializerOptions { PropertyNamingPolicy = JsonNamingPolicy.CamelCase, WriteIndented = false };
-            Response.Headers.Append("X-Pagination", System.Text.Json.JsonSerializer.Serialize(metadata, options));
+            Response.AddPaginationHeader(simulacoesPaginadas);
 
             return Ok(simulacoesPaginadas);
         }

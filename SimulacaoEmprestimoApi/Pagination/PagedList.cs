@@ -4,7 +4,7 @@
     {
         public int CurrentPage { get; set; } // pagina atual
         public int TotalPages { get; set; } 
-        public int PageSize { get; set; } // qtss itens por pagina
+        public int PageSize { get; set; } // qtdd itens por pagina
         public int TotalCount { get; set; } // total de itens na fonte de dados
 
         public bool HasPrevious => CurrentPage > 1;

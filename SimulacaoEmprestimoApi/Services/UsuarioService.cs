@@ -169,7 +169,8 @@ namespace SimulacaoEmprestimoApi.Services
                 _logger.LogWarning("Usuário Id {id} não localizado no banco", id);
                 throw new KeyNotFoundException($"UsuarioService.RemoverUsuarioAsync() : Usuário Id {id} não localizado no banco");
             }
-            //throw new Exception("UsuarioService.RemoverUsuarioAsync(): Erro simulado para testes"); // ### forçar erro para testes ###
+
+            //throw new Exception("UsuarioService.RemoverUsuarioAsync(): Erro simulado para testes");
 
             _dbContext.Usuarios.Remove(usuario);
             await _dbContext.SaveChangesAsync();

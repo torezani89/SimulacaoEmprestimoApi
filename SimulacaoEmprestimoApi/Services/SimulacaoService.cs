@@ -4,6 +4,7 @@ using Microsoft.EntityFrameworkCore;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Options;
 using SimulacaoEmprestimoApi.Data;
+using SimulacaoEmprestimoApi.Extensions;
 using SimulacaoEmprestimoApi.Models;
 using SimulacaoEmprestimoApi.Pagination;
 
@@ -169,6 +170,7 @@ namespace SimulacaoEmprestimoApi.Services
         {
             List<SimulacaoModel> simulacoes = await _dbContext.Simulacoes.ToListAsync();
             return simulacoes ?? new List<SimulacaoModel>();
+            //return simulacoes?.Select(s => s.ToSimulacaoResponseDto()).ToList() ?? new List<SimulacaoModel>(); // SimulacaoMappingExtensionDto
             //catch (Exception ex) //centralizado em ErrorHandlingMiddleware
             //{
             //    throw new Exception($"Erro ao acessar simulações no banco: {ex.Message}", ex);
