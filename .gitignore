@@ -1,0 +1,24 @@
+# Visual Studio
+.vs/
+*.user
+*.userosscache
+*.sln.docstates
+
+# Logs
+Logs/
+*.log
+
+# Database queries (não versionar)
+queries_db/
+
+# Build results
+[Bb]in/
+[Oo]bj/
+
+# ASP.NET Core
+appsettings.Development.json
+
+# Outros
+*.db
+*.db-shm
+*.db-wal
